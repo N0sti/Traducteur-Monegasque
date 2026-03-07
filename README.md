@@ -183,7 +183,23 @@ Entrée
   └─ 6. Nom propre (majuscule hors début) → conservé
          Token inconnu → affiché en rouge
 ```
-
+### Structure du code du traducteur
+```
+munegascu/
+├── index.html              ← HTML pur, zéro logique
+├── src/
+│   ├── css/main.css        ← Tous les styles (~300 lignes, variables CSS)
+│   ├── js/
+│   │   ├── translator.js   ← Moteur de traduction (module isolé)
+│   │   ├── ui.js           ← Interface, dictionnaire, corrections
+│   │   ├── admin.js        ← Admin + import CSV + conflits
+│   │   └── audio.js        ← Web Speech API
+│   └── data/
+│       └── database.js     ← BDD complète : mots, phrases, conjugaisons, patterns
+├── .gitignore
+└── README.md
+```
+---
 ### Détection des noms propres
 
 Un mot est considéré comme nom propre si :

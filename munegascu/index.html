@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Traducteur français ↔ monégasque (münegascu) — dictionnaire, grammaire, conjugaison, prononciation">
+  <meta name="theme-color" content="#C8102E">
+
+  <title>Traducteur Monégasque — Münegascu</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="src/css/main.css">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     HEADER
+     ══════════════════════════════════════════════════════════ -->
+<header>
+  <div class="coat">🇲🇨</div>
+  <h1>Traducteur Monégasque <span>Münegascu · Patrimoine linguistique</span></h1>
+  <button class="btn-admin" onclick="Admin.open()">⚙️ Admin</button>
+</header>
+
+<!-- ══════════════════════════════════════════════════════════
+     NAVIGATION
+     ══════════════════════════════════════════════════════════ -->
+<nav class="tabs">
+  <button class="tab-btn active" onclick="switchTab('traducteur',this)">🔤 Traducteur</button>
+  <button class="tab-btn"        onclick="switchTab('grammaire',this)">📐 Grammaire</button>
+  <button class="tab-btn"        onclick="switchTab('conjugaison',this)">🔀 Conjugaison</button>
+  <button class="tab-btn"        onclick="switchTab('csv',this)">📥 Import CSV</button>
+</nav>
+
+<main class="main">
+
+  <!-- ══════════════════════════════════════════════════════
+       ONGLET TRADUCTEUR
+       ══════════════════════════════════════════════════════ -->
+  <section id="tab-traducteur" class="tab-content active">
+    <br>
+
+    <!-- Boîte de traduction -->
+    <div class="tbox">
+      <div class="lang-bar">
+        <div class="lang-label" id="lbl-from">🇫🇷 Français<small>Source</small></div>
+        <button class="swap-btn" onclick="swapDir()" title="Inverser les langues">⇄</button>
+        <div class="lang-label" id="lbl-to">🇲🇨 Monégasque<small>Traduction</small></div>
+      </div>
+
+      <div class="ta-row">
+        <div class="ta-col">
+          <label for="tin">Texte à traduire</label>
+          <textarea id="tin" placeholder="Ex: Bonjour, je m'appelle Emma." rows="4"
+                    onkeydown="if(event.ctrlKey&&event.key==='Enter')doTranslate()"></textarea>
+        </div>
+        <div class="ta-col">
+          <label>Traduction</label>
+          <div id="tout" class="out-area empty">La traduction apparaît ici…</div>
+        </div>
+      </div>
+
+      <div class="abar">
+        <button class="btn-red"   onclick="doTranslate()">Traduire</button>
+        <button class="btn-ghost" onclick="clearAll()">Effacer</button>
+        <span style="font-size:.73rem;color:#888">Voix :</span>
+        <select class="voice-select" id="vsel"></select>
+        <button class="btn-blue"  onclick="speakOut(event)">🔊 Écouter</button>
+        <button class="btn-or ml-auto" onclick="copyOut()">📋 Copier</button>
+      </div>
+
+      <!-- Analyse tokenisée -->
+      <div id="analysis-wrap" style="display:none">
+        <div class="analysis-box" id="analysis-box"></div>
+        <div class="legend">
+          <span><span class="dot" style="background:#eaf7ef;border:1px solid #adb"></span>Dictionnaire</span>
+          <span><span class="dot" style="background:#e8f4fd;border:1px solid #85c1e9"></span>Déduit (grammaire)</span>
+          <span><span class="dot" style="background:#fef9e7;border:1px dashed var(--or)"></span>Phrase reconnue</span>
+          <span><span class="dot" style="background:#f3e5ff;border:1px solid #cab"></span>Nom propre</span>
+          <span><span class="dot" style="background:#fdecea;border:1px solid #daa"></span>Non trouvé</span>
+        </div>
+      </div>
+
+      <!-- Correction participative -->
+      <div class="correction-panel" id="correction-panel">
+        <h4>✏️ Proposer une correction</h4>
+        <p style="font-size:.8rem;color:#777;margin-bottom:10px">
+          Si la traduction est incorrecte, proposez une correction.
+          Elle sera soumise à validation par un administrateur.
+        </p>
+        <input type="text" class="correction-input" id="correction-input"
+               placeholder="Votre proposition de traduction en monégasque…">
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn-vert"  onclick="submitCorrection()">📤 Soumettre</button>
+          <button class="btn-ghost" onclick="document.getElementById('correction-panel').classList.remove('show')">Annuler</button>
+        </div>
+        <div class="modal-status" id="correction-status"></div>
+      </div>
+    </div>
+
+    <!-- Bouton corriger -->
+    <div style="margin-top:10px;text-align:right">
+      <button class="btn-ghost" id="btn-correct" onclick="toggleCorrection()"
+              style="font-size:.78rem;display:none">
+        ✏️ Corriger cette traduction
+      </button>
+    </div>
+
+    <!-- Dictionnaire & Phrases -->
+    <div style="margin-top:28px">
+      <div class="section-title">
+        📚 Dictionnaire &amp; Phrases
+        <span class="badge"      id="dcnt">0</span>
+        <span class="badge badge-blue" id="pcnt" style="margin-left:2px">0 phrases</span>
+        <span class="badge badge-vert" id="custcnt" style="display:none">0 importés</span>
+        <div style="margin-left:auto;display:flex;gap:6px">
+          <button class="btn-ghost" onclick="toggleView('words')"   id="view-words"
+                  style="font-size:.75rem;background:var(--or);color:var(--blanc);border-color:var(--or)">Mots</button>
+          <button class="btn-ghost" onclick="toggleView('phrases')" id="view-phrases"
+                  style="font-size:.75rem">Phrases</button>
+        </div>
+      </div>
+      <div class="cats" id="cat-bar"></div>
+      <div class="search-bar">
+        <input type="text" id="dsearch" placeholder="Rechercher un mot ou une phrase…" oninput="searchAll()">
+        <button onclick="searchAll()">🔍</button>
+      </div>
+      <div class="dict-grid" id="dres"></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       ONGLET GRAMMAIRE
+       ══════════════════════════════════════════════════════ -->
+  <section id="tab-grammaire" class="tab-content">
+    <br>
+
+    <div class="gram-section">
+      <h3>🔤 Alphabet &amp; Prononciation</h3>
+      <table class="gram-table">
+        <tr><th>Graphème</th><th>Prononciation</th><th>Exemple MC</th><th>Équivalent FR</th></tr>
+        <tr><td><strong>ü</strong></td><td>[y]</td><td class="mc">Münegascu</td><td class="fr">« lune »</td></tr>
+        <tr><td><strong>ö</strong></td><td>[ø]</td><td class="mc">Scöa</td><td class="fr">« feu »</td></tr>
+        <tr><td><strong>sc+e/i</strong></td><td>[ʃ]</td><td class="mc">Sci</td><td class="fr">« chien »</td></tr>
+        <tr><td><strong>gi/ge</strong></td><td>[dʒ]</td><td class="mc">Giurnu</td><td class="fr">« djinn »</td></tr>
+        <tr><td><strong>ggi</strong></td><td>[dʒː]</td><td class="mc">Famiggia</td><td class="fr">DJ renforcé</td></tr>
+        <tr><td><strong>ci/ce</strong></td><td>[tʃ]</td><td class="mc">Cinque</td><td class="fr">« tchin »</td></tr>
+        <tr><td><strong>ae</strong></td><td>[ɛ]</td><td class="mc">Aegua</td><td class="fr">« fête »</td></tr>
+        <tr><td><strong>u final</strong></td><td>[y] réduit</td><td class="mc">Ventu</td><td class="fr">presque muet</td></tr>
+        <tr><td><strong>r</strong></td><td>[r] roulé</td><td class="mc">Mare</td><td class="fr">espagnol</td></tr>
+      </table>
+    </div>
+
+    <div class="gram-section">
+      <h3>👤 Articles</h3>
+      <div class="gram-grid">
+        <div>
+          <p style="font-size:.8rem;color:#777;margin-bottom:7px"><strong>Définis</strong></p>
+          <table class="gram-table">
+            <tr><th></th><th>Masc.</th><th>Fém.</th></tr>
+            <tr><td>Sing.</td><td class="mc">U / U'</td><td class="mc">A / A'</td></tr>
+            <tr><td>Plur.</td><td class="mc">I</td><td class="mc">E / Le</td></tr>
+          </table>
+          <div class="note">Ex: <span class="mc">U mare</span> · <span class="mc">A famiggia</span> · <span class="mc">I figgiù</span></div>
+        </div>
+        <div>
+          <p style="font-size:.8rem;color:#777;margin-bottom:7px"><strong>Indéfinis</strong></p>
+          <table class="gram-table">
+            <tr><th></th><th>Masc.</th><th>Fém.</th></tr>
+            <tr><td>Sing.</td><td class="mc">Un</td><td class="mc">Una</td></tr>
+            <tr><td>Plur.</td><td class="mc">Di</td><td class="mc">De</td></tr>
+          </table>
+          <div class="note">Élision : <span class="mc">U'amïgu</span>, <span class="mc">A'aegua</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gram-section">
+      <h3>🔄 Pronoms</h3>
+      <table class="gram-table">
+        <tr><th>FR</th><th>Sujet MC</th><th>COD MC</th><th>COI MC</th></tr>
+        <tr><td>Je</td><td class="mc">Mi / Mì</td><td class="mc">me</td><td class="mc">me</td></tr>
+        <tr><td>Tu</td><td class="mc">Ti</td><td class="mc">te</td><td class="mc">te</td></tr>
+        <tr><td>Il/Elle</td><td class="mc">Elu/Ela</td><td class="mc">lu/la</td><td class="mc">ge/ghe</td></tr>
+        <tr><td>Nous</td><td class="mc">Nui</td><td class="mc">ne</td><td class="mc">ne</td></tr>
+        <tr><td>Vous</td><td class="mc">Vui</td><td class="mc">ve</td><td class="mc">ve</td></tr>
+        <tr><td>Ils/Elles</td><td class="mc">Eri/Ere</td><td class="mc">i/e</td><td class="mc">ge/ghe</td></tr>
+      </table>
+      <div class="note">Le pronom sujet est souvent omis : <span class="mc">Sùn de Mùnegu</span></div>
+    </div>
+
+    <div class="gram-section">
+      <h3>🧱 Structure &amp; Négation</h3>
+      <table class="gram-table">
+        <tr><th>Type</th><th>Structure MC</th><th>Exemple</th></tr>
+        <tr><td>Affirmative</td><td>Sujet (opt.) + V + COD</td><td class="mc">Ami Mùnegu</td></tr>
+        <tr><td>Négative</td><td><strong>Nu</strong> + V + <strong>miga</strong></td><td class="mc">Nu cümprendu miga</td></tr>
+        <tr><td>Interrogative</td><td>V + pron ? (intonation)</td><td class="mc">Vai a u mercau ?</td></tr>
+        <tr><td>Exclamative</td><td>Che + nom/adj !</td><td class="mc">Che bèu !</td></tr>
+      </table>
+    </div>
+
+    <div class="gram-section">
+      <h3>📍 Prépositions</h3>
+      <table class="gram-table">
+        <tr><th>FR</th><th>MC</th><th>Exemple</th></tr>
+        <tr><td>de</td><td class="mc">de</td><td class="mc">Sùn de Mùnegu</td></tr>
+        <tr><td>à / au</td><td class="mc">a / au</td><td class="mc">Vagu a u mercau</td></tr>
+        <tr><td>en</td><td class="mc">in</td><td class="mc">Stagu in Mùnegu</td></tr>
+        <tr><td>avec</td><td class="mc">cun</td><td class="mc">Cun u amïgu</td></tr>
+        <tr><td>pour</td><td class="mc">pe / per</td><td class="mc">Pe ti</td></tr>
+        <tr><td>sur</td><td class="mc">sü / su</td><td class="mc">Sü a testa</td></tr>
+        <tr><td>dans</td><td class="mc">dentu / into</td><td class="mc">Dentu a maiun</td></tr>
+        <tr><td>sans</td><td class="mc">sensa</td><td class="mc">Sensa pare</td></tr>
+        <tr><td>entre</td><td class="mc">tra</td><td class="mc">Tra nui</td></tr>
+      </table>
+    </div>
+
+    <div class="gram-section">
+      <h3>❓ Interrogatifs &amp; Adverbes</h3>
+      <div class="gram-grid">
+        <div>
+          <table class="gram-table">
+            <tr><th>FR</th><th>MC</th></tr>
+            <tr><td>Qui ?</td><td class="mc">Ci ?</td></tr>
+            <tr><td>Quoi ?</td><td class="mc">Cüsa ?</td></tr>
+            <tr><td>Où ?</td><td class="mc">Ùnde ?</td></tr>
+            <tr><td>Quand ?</td><td class="mc">Quandu ?</td></tr>
+            <tr><td>Comment ?</td><td class="mc">Cümu ?</td></tr>
+            <tr><td>Pourquoi ?</td><td class="mc">Perché ?</td></tr>
+            <tr><td>Combien ?</td><td class="mc">Quantu ?</td></tr>
+          </table>
+        </div>
+        <div>
+          <table class="gram-table">
+            <tr><th>FR</th><th>MC</th></tr>
+            <tr><td>maintenant</td><td class="mc">adèssu</td></tr>
+            <tr><td>toujours</td><td class="mc">sempre</td></tr>
+            <tr><td>jamais</td><td class="mc">mai</td></tr>
+            <tr><td>beaucoup</td><td class="mc">assai</td></tr>
+            <tr><td>très</td><td class="mc">mütu</td></tr>
+            <tr><td>ici</td><td class="mc">chì</td></tr>
+            <tr><td>déjà</td><td class="mc">già</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       ONGLET CONJUGAISON
+       ══════════════════════════════════════════════════════ -->
+  <section id="tab-conjugaison" class="tab-content">
+    <br>
+    <div class="gram-section">
+      <h3>Groupes verbaux</h3>
+      <p style="font-size:.85rem;color:#555;margin-bottom:10px">
+        <span class="pill"       onclick="loadVerb('aimer')">1er groupe : -à</span>
+        <span class="pill rouge" onclick="loadVerb('finir')">2e groupe : -ì/-ü</span>
+        <span class="pill bleu"  onclick="loadVerb('être')">3e groupe : irréguliers</span>
+      </p>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">
+        <span class="pill" onclick="loadVerb('être')">être</span>
+        <span class="pill" onclick="loadVerb('avoir')">avoir</span>
+        <span class="pill" onclick="loadVerb('aller')">aller</span>
+        <span class="pill" onclick="loadVerb('faire')">faire</span>
+        <span class="pill" onclick="loadVerb('aimer')">aimer</span>
+        <span class="pill" onclick="loadVerb('vouloir')">vouloir</span>
+        <span class="pill" onclick="loadVerb('pouvoir')">pouvoir</span>
+        <span class="pill" onclick="loadVerb('dire')">dire</span>
+        <span class="pill" onclick="loadVerb('parler')">parler</span>
+        <span class="pill" onclick="loadVerb('manger')">manger</span>
+        <span class="pill" onclick="loadVerb('boire')">boire</span>
+        <span class="pill" onclick="loadVerb('venir')">venir</span>
+        <span class="pill" onclick="loadVerb('savoir')">savoir</span>
+        <span class="pill" onclick="loadVerb('voir')">voir</span>
+        <span class="pill" onclick="loadVerb('donner')">donner</span>
+        <span class="pill" onclick="loadVerb('appeler')">appeler</span>
+        <span class="pill" onclick="loadVerb('habiter')">habiter</span>
+        <span class="pill" onclick="loadVerb('trouver')">trouver</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <input type="text" id="verb-search" placeholder="Tapez un verbe français…"
+        style="flex:1;padding:10px 14px;border:2px solid var(--sable2);border-radius:8px;font-family:'Lato',sans-serif;font-size:.9rem;outline:none"
+        oninput="searchVerb()">
+      <button class="btn-red" onclick="searchVerb()">Conjuguer</button>
+    </div>
+    <div id="conj-result"></div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       ONGLET CSV (accès admin seulement)
+       ══════════════════════════════════════════════════════ -->
+  <section id="tab-csv" class="tab-content">
+    <br>
+    <div class="locked-screen">
+      <div style="font-size:3rem;margin-bottom:14px">🔒</div>
+      <div style="font-family:'Playfair Display',serif;font-size:1.3rem;margin-bottom:10px">Accès Administrateur requis</div>
+      <p style="font-size:.88rem;color:var(--or-clair);line-height:1.7;margin-bottom:20px">
+        L'import CSV et la gestion du dictionnaire sont réservés aux administrateurs.<br>
+        Connectez-vous pour accéder à ces fonctionnalités.
+      </p>
+      <button class="btn-red" onclick="Admin.open()">🔑 Se connecter en tant qu'admin</button>
+    </div>
+  </section>
+
+</main>
+
+<!-- ══════════════════════════════════════════════════════════
+     MODAL ADMIN
+     ══════════════════════════════════════════════════════════ -->
+<div class="admin-overlay" id="admin-overlay" onclick="if(event.target===this)Admin.close()">
+  <div class="admin-modal">
+    <div class="admin-header">
+      <h2>⚙️ Administration — Münegascu</h2>
+      <button class="admin-close" onclick="Admin.close()">×</button>
+    </div>
+    <div class="admin-body">
+
+      <!-- Login -->
+      <div class="admin-login" id="admin-login">
+        <div style="font-size:2.5rem;margin-bottom:12px">🔐</div>
+        <p style="color:#777;font-size:.88rem;margin-bottom:18px">Mot de passe administrateur</p>
+        <input type="password" id="admin-pwd" placeholder="Mot de passe…"
+               onkeydown="if(event.key==='Enter')Admin.tryLogin()">
+        <button class="btn-red" style="width:100%;margin-top:4px" onclick="Admin.tryLogin()">Connexion</button>
+        <div class="modal-status" id="login-status"></div>
+        <p style="font-size:.74rem;color:#bbb;margin-top:14px">Démo : mot de passe = <strong>admin</strong></p>
+      </div>
+
+      <!-- Panel (visible après login) -->
+      <div id="admin-panel" style="display:none">
+
+        <!-- Suggestions -->
+        <div class="admin-section">
+          <h3>📬 Suggestions de correction <span class="badge" id="sugg-cnt">0</span></h3>
+          <div id="sugg-list"><p style="color:#bbb;font-size:.85rem">Aucune suggestion en attente.</p></div>
+        </div>
+
+        <!-- Import CSV -->
+        <div class="admin-section">
+          <h3>📥 Import CSV</h3>
+          <div class="csv-box" id="csvbox"
+               ondragover="Admin.csvDrag(event)"
+               ondrop="Admin.csvDrop(event)"
+               ondragleave="document.getElementById('csvbox').classList.remove('drag')">
+            <p style="font-size:.82rem;color:#777;margin-bottom:8px">Format attendu :</p>
+            <div class="csv-example">fr,mc,phonetic,cat
+bonjour,Bun giurnu,bun dʒurnu,salutation
+mer,Mare,mare,nature</div>
+            <label class="csv-drop-label" for="csv-file-input">
+              <span style="font-size:2rem">📂</span>
+              <strong>Cliquez ou glissez un fichier .csv</strong>
+              <small style="color:#999">UTF-8, séparateur virgule</small>
+            </label>
+            <input type="file" id="csv-file-input" accept=".csv" style="display:none"
+                   onchange="Admin.handleCSV(this.files[0])">
+          </div>
+          <div class="modal-status" id="csv-status"></div>
+        </div>
+
+        <!-- Ajout manuel -->
+        <div class="admin-section">
+          <h3>➕ Ajout manuel</h3>
+          <div class="form-grid">
+            <div class="form-field"><label>Français</label>   <input type="text" id="add-fr"  placeholder="Ex: balcon"></div>
+            <div class="form-field"><label>Monégasque</label> <input type="text" id="add-mc"  placeholder="Ex: Barcun"></div>
+            <div class="form-field"><label>Phonétique</label> <input type="text" id="add-ph"  placeholder="Ex: barkœ̃"></div>
+            <div class="form-field"><label>Catégorie</label>  <input type="text" id="add-cat" placeholder="Ex: habitat"></div>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn-red"   onclick="Admin.addManual()">Ajouter</button>
+            <button class="btn-ghost" onclick="Admin.exportCSV()">💾 Exporter CSV</button>
+            <button class="btn-ghost" onclick="Admin.clearCustom()" style="color:var(--rouge)">🗑️ Supprimer importés</button>
+          </div>
+          <div class="modal-status" id="add-status"></div>
+        </div>
+
+      </div><!-- /admin-panel -->
+    </div><!-- /admin-body -->
+  </div><!-- /admin-modal -->
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     MODAL CONFLITS CSV
+     ══════════════════════════════════════════════════════════ -->
+<div class="conflict-overlay" id="conflict-overlay">
+  <div class="conflict-modal">
+    <div class="conflict-header">
+      <h2>⚠️ Conflits détectés</h2>
+      <button style="background:transparent;border:none;color:var(--blanc);font-size:1.4rem;cursor:pointer"
+              onclick="Conflict.close()">×</button>
+    </div>
+    <div class="conflict-body">
+      <div class="conflict-global">
+        <strong style="color:var(--rouge)">Résolution globale :</strong>
+        <button class="btn-vert"  onclick="Conflict.resolveAll('csv')">✅ Prendre tous les CSV</button>
+        <button class="btn-blue"  onclick="Conflict.resolveAll('db')">🗄️ Garder tous les existants</button>
+        <button class="btn-ghost" onclick="Conflict.resolveAll('skip')">⏭️ Ignorer tous</button>
+      </div>
+      <div id="conflict-list"></div>
+      <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+        <button class="btn-ghost" onclick="Conflict.close()">Annuler</button>
+        <button class="btn-red"   onclick="Conflict.apply()">✅ Appliquer les choix</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SCRIPTS  (ordre important : data → moteur → ui → admin → audio → init)
+     ══════════════════════════════════════════════════════════ -->
+<script src="src/data/database.js"></script>
+<script src="src/js/translator.js"></script>
+<script src="src/js/ui.js"></script>
+<script src="src/js/admin.js"></script>
+<script src="src/js/audio.js"></script>
+<script>
+  // Point d'entrée unique
+  document.addEventListener('DOMContentLoaded', () => {
+    initUI();
+    Audio.init();
+  });
+</script>
+
+</body>
+</html>

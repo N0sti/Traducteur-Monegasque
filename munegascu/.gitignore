@@ -1,0 +1,19 @@
+# Système
+.DS_Store
+Thumbs.db
+*.log
+
+# Éditeurs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node (si build tools ajoutés)
+node_modules/
+dist/
+.env
+.env.local
+
+# Déploiement
+*.zip

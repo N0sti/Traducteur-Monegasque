@@ -1,0 +1,26 @@
+[
+  {
+    "fr": "parler",
+    "mc": "parlà",
+    "conj": {
+      "présent":      ["Parlu",      "Parli",      "Parla",      "Parlemu",    "Parlèi",     "Parlanu"],
+      "imparfait":    ["Parlava",    "Parlavi",    "Parlava",    "Parlavamu",  "Parlaväi",   "Parlavanu"],
+      "futur":        ["Parleraïgu", "Parlerai",   "Parlera",    "Parleremu",  "Parlerei",   "Parleranu"],
+      "conditionnel": ["Parlerìa",   "Parlerìi",   "Parlerìa",   "Parlerìamu", "Parlerìai",  "Parlerìanu"],
+      "subjonctif":   ["Parli",      "Parli",      "Parli",      "Parliamu",   "Parliai",    "Parlinu"],
+      "impératif":    ["—",          "Parla",      "Parli",      "Parliamu",   "Parlèi",     "Parlinu"]
+    }
+  },
+  {
+    "fr": "manger",
+    "mc": "mangiare",
+    "conj": {
+      "présent":      ["Mangiu",     "Mangi",      "Mangia",     "Mangiemu",   "Mangièi",    "Manginu"],
+      "imparfait":    ["Mangiava",   "Mangiavi",   "Mangiava",   "Mangiavamu", "Mangiavèi",  "Mangiavanu"],
+      "futur":        ["Mangieraïgu","Mangierai",  "Mangiera",   "Mangieremu", "Mangieréi",  "Mangieranu"],
+      "conditionnel": ["Mangierìa",  "Mangierìi",  "Mangierìa",  "Mangierìamu","Mangierìai", "Mangierìanu"],
+      "subjonctif":   ["Mangi",      "Mangi",      "Mangi",      "Mangiamu",   "Mangiai",    "Manginu"],
+      "impératif":    ["—",          "Mangia",     "Mangi",      "Mangiamu",   "Mangièi",    "Manginu"]
+    }
+  }
+]

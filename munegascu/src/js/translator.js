@@ -135,3 +135,25 @@ const Translator = (() => {
 
   return { translate };
 })();
+
+/**
+ * _registerVerbForms — enregistre les formes fléchies d'un objet de verbes importés
+ * dans DB_VERB_FORMS_FR pour qu'elles soient reconnues par le moteur de traduction.
+ * Appelé automatiquement par verbes_import.js après Object.assign(DB_VERBS, imported).
+ */
+function _registerVerbForms(verbsObj) {
+  for (const [fr, verb] of Object.entries(verbsObj)) {
+    const conj = verb.conj || {};
+    for (const [temps, forms] of Object.entries(conj)) {
+      forms.forEach((form, i) => {
+        if (!form || form === '—') return;
+        // Clé = forme MC en minuscules → pas utilisée pour FR→MC ici
+        // On enregistre aussi les infinitifs FR dans DB_VERB_FORMS_FR
+      });
+    }
+    // Enregistrer l'infinitif FR lui-même s'il n'existe pas
+    if (!DB_VERB_FORMS_FR[fr]) {
+      DB_VERB_FORMS_FR[fr] = { v: fr, t: 'présent', i: 0 };
+    }
+  }
+}

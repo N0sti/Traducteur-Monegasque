@@ -34,7 +34,8 @@
   <button class="tab-btn active" onclick="switchTab('traducteur',this)">🔤 Traducteur</button>
   <button class="tab-btn"        onclick="switchTab('grammaire',this)">📐 Grammaire</button>
   <button class="tab-btn"        onclick="switchTab('conjugaison',this)">🔀 Conjugaison</button>
-  <button class="tab-btn"        onclick="switchTab('csv',this)">📥 Import CSV</button>
+  <button class="tab-btn"        onclick="switchTab('quiz',this)">🎮 Quiz</button>
+  <button class="tab-btn"        onclick="switchTab('csv',this)" id="tab-btn-csv" style="display:none">📥 Import CSV</button>
 </nav>
 
 <main class="main">
@@ -67,6 +68,7 @@
 
       <div class="abar">
         <button class="btn-red"   onclick="doTranslate()">Traduire</button>
+        <span class="lang-detect-badge" id="lang-detect-badge"></span>
         <button class="btn-ghost" onclick="clearAll()">Effacer</button>
         <span style="font-size:.73rem;color:#888">Voix :</span>
         <select class="voice-select" id="vsel"></select>
@@ -86,21 +88,33 @@
         </div>
       </div>
 
-      <!-- Correction participative -->
+      <!-- Correction participative — clic sur mot traduit -->
       <div class="correction-panel" id="correction-panel">
-        <h4>✏️ Proposer une correction</h4>
-        <p style="font-size:.8rem;color:#777;margin-bottom:10px">
-          Si la traduction est incorrecte, proposez une correction.
-          Elle sera soumise à validation par un administrateur.
+        <h4>✏️ Corriger un mot traduit</h4>
+        <p style="font-size:.8rem;color:#777;margin-bottom:12px">
+          Cliquez sur le mot à corriger dans la traduction ci-dessus.
         </p>
-        <input type="text" class="correction-input" id="correction-input"
-               placeholder="Votre proposition de traduction en monégasque…">
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <button class="btn-vert"  onclick="submitCorrection()">📤 Soumettre</button>
-          <button class="btn-ghost" onclick="document.getElementById('correction-panel').classList.remove('show')">Annuler</button>
+        <div id="correction-word-select" style="display:none">
+          <div style="margin-bottom:6px;font-size:.82rem">
+            Mot source : <strong id="correction-selected-word" style="color:var(--bleu)"></strong>
+          </div>
+          <div style="margin-bottom:10px;font-size:.82rem;color:#888">
+            Traduction actuelle : <em id="correction-selected-tr" style="color:var(--rouge)"></em>
+          </div>
+          <input type="text" class="correction-input" id="correction-input"
+                 placeholder="Votre correction en monégasque…">
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn-vert"  onclick="submitCorrection()">📤 Soumettre</button>
+            <button class="btn-ghost" onclick="document.getElementById('correction-panel').classList.remove('show')">Annuler</button>
+          </div>
+        </div>
+        <div id="correction-click-hint" style="font-size:.8rem;color:var(--or)">
+          👆 Cliquez sur un mot dans la zone de traduction pour le sélectionner
         </div>
         <div class="modal-status" id="correction-status"></div>
       </div>
+    </div>
+    <div id="history-list"><p style="color:#bbb;font-size:.83rem">Aucune traduction dans cette session.</p></div>
     </div>
 
     <!-- Bouton corriger -->
@@ -295,6 +309,95 @@
   </section>
 
   <!-- ══════════════════════════════════════════════════════
+       ONGLET QUIZ
+       ══════════════════════════════════════════════════════ -->
+  <section id="tab-quiz" class="tab-content">
+    <br>
+
+    <!-- Setup -->
+    <div class="quiz-setup" id="quiz-setup">
+      <h2>🎮 Mode Quiz — Flashcards</h2>
+      <div class="quiz-field">
+        <label>Mode</label>
+        <select id="quiz-mode">
+          <option value="mots">Vocabulaire (mots)</option>
+          <option value="phrases">Phrases complètes</option>
+          <option value="conjugaison">Conjugaison</option>
+        </select>
+      </div>
+      <div class="quiz-field" id="quiz-cat-row">
+        <label>Catégorie</label>
+        <select id="quiz-cat">
+          <option value="all">Toutes catégories</option>
+        </select>
+      </div>
+      <div class="quiz-field">
+        <label>Direction</label>
+        <select id="quiz-dir">
+          <option value="fr-mc">Français → Monégasque</option>
+          <option value="mc-fr">Monégasque → Français</option>
+        </select>
+      </div>
+      <button class="btn-red" style="width:100%;margin-top:8px;padding:12px" onclick="Quiz.start()">
+        🚀 Commencer le quiz
+      </button>
+      <div class="modal-status" id="quiz-msg"></div>
+    </div>
+
+    <!-- Jeu -->
+    <div class="quiz-game" id="quiz-game" style="display:none">
+      <!-- Progression -->
+      <div class="quiz-progress">
+        <div class="quiz-progress-bar-wrap">
+          <div class="quiz-progress-bar-fill" id="quiz-progress-bar" style="width:0%"></div>
+        </div>
+        <div class="quiz-progress-info">
+          <span id="quiz-progress-txt">0 / 0</span>
+          <div class="quiz-score-pills">
+            <span class="quiz-score-pill" style="background:#eafaf1;color:var(--vert)">✅ <span id="quiz-score-ok">0</span></span>
+            <span class="quiz-score-pill" style="background:#fdecea;color:var(--rouge)">❌ <span id="quiz-score-ko">0</span></span>
+            <span class="quiz-score-pill" style="background:#f4f4f4;color:#888">⏭ <span id="quiz-score-skip">0</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Carte -->
+      <div class="quiz-flashcard-wrap">
+        <div class="quiz-flashcard" id="quiz-flashcard" onclick="Quiz.flip()">
+          <div class="quiz-face quiz-front" id="quiz-front"></div>
+          <div class="quiz-face quiz-back"  id="quiz-back"></div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="quiz-actions" id="quiz-actions-flip">
+        <button class="quiz-btn-flip" onclick="Quiz.flip()">🔄 Révéler la réponse</button>
+        <button class="quiz-btn-skip" onclick="Quiz.answer('skip')">⏭ Passer</button>
+      </div>
+      <div class="quiz-actions" id="quiz-actions-answer" style="display:none">
+        <button class="quiz-btn-ko"   onclick="Quiz.answer('ko')">❌ Incorrect</button>
+        <button class="quiz-btn-skip" onclick="Quiz.answer('skip')">⏭ Passer</button>
+        <button class="quiz-btn-ok"   onclick="Quiz.answer('ok')">✅ Correct</button>
+      </div>
+
+      <div style="text-align:center;margin-top:16px">
+        <button class="btn-ghost" onclick="Quiz.stop()" style="font-size:.78rem">Arrêter le quiz</button>
+      </div>
+    </div>
+
+    <!-- Résultats -->
+    <div class="quiz-results" id="quiz-results" style="display:none">
+      <div id="quiz-res-summary"></div>
+      <div class="quiz-mistakes" id="quiz-res-mistakes"></div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="btn-red"   onclick="Quiz.retry()">🔁 Rejouer les erreurs</button>
+        <button class="btn-ghost" onclick="Quiz.start()">🔄 Nouveau quiz</button>
+        <button class="btn-ghost" onclick="Quiz.stop()">🏠 Retour</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
        ONGLET CSV (accès admin seulement)
        ══════════════════════════════════════════════════════ -->
   <section id="tab-csv" class="tab-content">
@@ -337,15 +440,82 @@
       <!-- Panel (visible après login) -->
       <div id="admin-panel" style="display:none">
 
-        <!-- Suggestions -->
-        <div class="admin-section">
-          <h3>📬 Suggestions de correction <span class="badge" id="sugg-cnt">0</span></h3>
-          <div id="sugg-list"><p style="color:#bbb;font-size:.85rem">Aucune suggestion en attente.</p></div>
+        <!-- Navigation onglets admin -->
+        <div class="adm-tabs">
+          <button class="adm-tab-btn active" data-tab="suggestions" onclick="Admin.switchTab('suggestions')">💬 Suggestions</button>
+          <button class="adm-tab-btn" data-tab="bdd"         onclick="Admin.switchTab('bdd')">🗄️ Base de données</button>
+          <button class="adm-tab-btn" data-tab="verbes"      onclick="Admin.switchTab('verbes')">🔀 Verbes</button>
+          <button class="adm-tab-btn" data-tab="csv"         onclick="Admin.switchTab('csv')">📥 Import CSV</button>
+          <button class="adm-tab-btn" data-tab="ajout"       onclick="Admin.switchTab('ajout')">➕ Ajout</button>
         </div>
 
-        <!-- Import CSV -->
-        <div class="admin-section">
-          <h3>📥 Import CSV</h3>
+        <!-- ONGLET SUGGESTIONS -->
+        <div class="adm-tab-content" id="adm-suggestions">
+          <div id="sugg-list"><p style="color:#bbb;font-size:.85rem">Aucune suggestion en attente.</p></div>
+          <div class="modal-status" id="sugg-status"></div>
+        </div>
+
+        <!-- ONGLET BDD -->
+        <div class="adm-tab-content" id="adm-bdd" style="display:none">
+          <div class="bdd-toolbar">
+            <input type="text" class="bdd-search" placeholder="🔍 Rechercher…"
+                   oninput="Admin.bddFilter('q', this.value)">
+            <select id="bdd-cat-filter" onchange="Admin.bddFilter('cat', this.value)">
+              <option value="all">Toutes catégories</option>
+            </select>
+            <span class="bdd-cnt-badge" id="bdd-cnt">0 mots</span>
+          </div>
+          <div class="bdd-table-wrap">
+            <table class="bdd-table">
+              <thead>
+                <tr>
+                  <th>Français</th>
+                  <th>Monégasque</th>
+                  <th>Phonétique IPA</th>
+                  <th>Catégorie</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="bdd-tbody"></tbody>
+            </table>
+          </div>
+          <div class="bdd-pagination" id="bdd-pag"></div>
+          <div class="modal-status" id="bdd-status"></div>
+        </div>
+
+        <!-- ONGLET VERBES -->
+        <div class="adm-tab-content" id="adm-verbes" style="display:none">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+            <span style="font-size:.85rem;color:#555">Verbes conjugués dans la BDD :</span>
+            <span class="badge badge-blue" id="verb-import-cnt">0</span>
+          </div>
+          <div style="display:flex;gap:6px;margin-bottom:14px">
+            <button class="verb-tab-btn active" data-tab="list"   onclick="Admin.openVerbTab('list')">📋 Liste</button>
+            <button class="verb-tab-btn"        data-tab="import" onclick="Admin.openVerbTab('import')">📥 Importer</button>
+          </div>
+          <div id="verb-tab-list">
+            <div class="verb-list-scroll" id="verb-import-list">
+              <p style="color:#bbb;font-size:.82rem">Chargement…</p>
+            </div>
+          </div>
+          <div id="verb-tab-import" style="display:none">
+            <p style="font-size:.8rem;color:#666;margin-bottom:12px">
+                Importez un fichier <code>.json</code> contenant vos verbes selon le template fourni.
+              </p>
+            <div style="background:var(--sable);border-radius:var(--radius-sm);padding:10px 14px;
+                        font-family:monospace;font-size:.74rem;color:#555;margin-bottom:12px;white-space:pre-wrap">python convert_verbes.py verbes.csv verbes_import.js</div>
+            <label class="csv-drop-label" for="verb-file-input">
+              <span style="font-size:1.8rem">📂</span>
+              <strong>Charger verbes.json</strong>
+            </label>
+            <input type="file" id="verb-file-input" accept=".json" style="display:none"
+                   onchange="Admin.handleVerbJSON(this.files[0])">
+            <div class="modal-status" id="verb-status"></div>
+          </div>
+        </div>
+
+        <!-- ONGLET CSV -->
+        <div class="adm-tab-content" id="adm-csv" style="display:none">
           <div class="csv-box" id="csvbox"
                ondragover="Admin.csvDrag(event)"
                ondrop="Admin.csvDrop(event)"
@@ -365,17 +535,22 @@ mer,Mare,mare,nature</div>
           <div class="modal-status" id="csv-status"></div>
         </div>
 
-        <!-- Ajout manuel -->
-        <div class="admin-section">
-          <h3>➕ Ajout manuel</h3>
+        <!-- ONGLET AJOUT -->
+        <div class="adm-tab-content" id="adm-ajout" style="display:none">
           <div class="form-grid">
             <div class="form-field"><label>Français</label>   <input type="text" id="add-fr"  placeholder="Ex: balcon"></div>
             <div class="form-field"><label>Monégasque</label> <input type="text" id="add-mc"  placeholder="Ex: Barcun"></div>
-            <div class="form-field"><label>Phonétique</label> <input type="text" id="add-ph"  placeholder="Ex: barkœ̃"></div>
-            <div class="form-field"><label>Catégorie</label>  <input type="text" id="add-cat" placeholder="Ex: habitat"></div>
+            <div class="form-field" style="grid-column:1/-1">
+              <label>Phonétique IPA</label>
+              <div style="display:flex;gap:6px">
+                <input type="text" id="add-ph" placeholder="Ex: barkœ̃" style="flex:1">
+                <button class="btn-ipa" onclick="IPA.open('add-ph')" title="Clavier IPA">🔣 IPA</button>
+              </div>
+            </div>
+            <div class="form-field"><label>Catégorie</label>  <input type="text" id="add-cat" placeholder="Ex: logement"></div>
           </div>
-          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn-red"   onclick="Admin.addManual()">Ajouter</button>
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn-red"   onclick="Admin.addManual()">➕ Ajouter</button>
             <button class="btn-ghost" onclick="Admin.exportCSV()">💾 Exporter CSV</button>
             <button class="btn-ghost" onclick="Admin.clearCustom()" style="color:var(--rouge)">🗑️ Supprimer importés</button>
           </div>
@@ -416,16 +591,40 @@ mer,Mare,mare,nature</div>
 <!-- ══════════════════════════════════════════════════════════
      SCRIPTS  (ordre important : data → moteur → ui → admin → audio → init)
      ══════════════════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════
+     MODAL CLAVIER IPA
+     ══════════════════════════════════════════════════════════ -->
+<div class="ipa-overlay" id="ipa-overlay" onclick="if(event.target===this)IPA.close()">
+  <div class="ipa-modal">
+    <div class="ipa-header">
+      <span>🔣 Clavier phonétique IPA</span>
+      <button onclick="IPA.close()">×</button>
+    </div>
+    <div class="ipa-body">
+      <div id="ipa-keyboard"></div>
+      <div class="ipa-actions">
+        <button class="ipa-ctrl" onclick="IPA.backspace()">⌫ Suppr.</button>
+        <button class="ipa-ctrl" onclick="IPA.clear()">🗑️ Effacer</button>
+        <button class="ipa-ctrl btn-vert" onclick="IPA.close()">✅ Valider</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="src/data/database.js"></script>
 <script src="src/js/translator.js"></script>
 <script src="src/js/ui.js"></script>
 <script src="src/js/admin.js"></script>
+<script src="src/js/quiz.js"></script>
+<script src="src/js/spellcheck.js"></script>
 <script src="src/js/audio.js"></script>
 <script>
   // Point d'entrée unique
   document.addEventListener('DOMContentLoaded', () => {
     initUI();
     Audio.init();
+    Quiz.initQuiz();
+    SpellCheck.init();
   });
 </script>
 

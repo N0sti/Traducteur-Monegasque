@@ -1,0 +1,24 @@
+{
+  "chanter": {
+    "mc": "Cantà",
+    "conj": {
+      "présent":      ["Cantu","Canti","Canta","Cantemu","Cantèi","Cantannu"],
+      "imparfait":    ["Cantava","Cantavi","Cantava","Cantavamu","Cantavai","Cantavannu"],
+      "futur":        ["Canterò","Canterai","Canterà","Canteremu","Canterei","Canterannu"],
+      "conditionnel": ["Canteria","Canteresti","Canteria","Canteriamu","Canteresti","Canteriannu"],
+      "subjonctif":   ["Canti","Canti","Canti","Cantemu","Cantèi","Cantinnu"],
+      "impératif":    ["—","Canta","Canti","Cantemu","Cantèi","—"]
+    }
+  },
+  "finir": {
+    "mc": "Finì",
+    "conj": {
+      "présent":      ["Finiscu","Finisci","Finisce","Finemu","Finèi","Finiscannu"],
+      "imparfait":    ["Finia","Finii","Finia","Finiamu","Finiai","Finiannu"],
+      "futur":        ["Finirò","Finirai","Finirà","Finiremu","Finirei","Finirannu"],
+      "conditionnel": ["Finiria","Finiresti","Finiria","Finiriamu","Finiresti","Finiriannu"],
+      "subjonctif":   ["Finisca","Finisci","Finisca","Finemu","Finèi","Finiscannu"],
+      "impératif":    ["—","Finisci","Finisca","Finemu","Finèi","—"]
+    }
+  }
+}

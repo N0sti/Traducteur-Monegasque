@@ -325,8 +325,9 @@ const SpellCheck = (() => {
     _renderMirror(text, _corrections);
   }
 
-  function _escHtml(s)  { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function _escAttr(s)  { return (s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  // Délégation à Security — pas de duplication
+  function _escHtml(s)  { return Security.escHtml(s); }
+  function _escAttr(s)  { return Security.escAttr(s); }
 
   return { init, accept, reject, clear };
 })();

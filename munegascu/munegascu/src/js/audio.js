@@ -167,7 +167,8 @@ const Audio = (() => {
         utt.pitch = 1.05;   // légèrement plus aigu que l'IT standard
       } else {
         // Voix système choisie par l'user
-        const idx  = parseInt(val.replace('sys:', ''));
+        const idxRaw = parseInt(val.replace('sys:', ''), 10);
+        const idx = (!isNaN(idxRaw) && idxRaw >= 0 && idxRaw < _voices.length) ? idxRaw : 0;
         utt.text   = clean;
         utt.voice  = _voices[idx] || _itVoice;
         utt.lang   = utt.voice?.lang || 'it-IT';

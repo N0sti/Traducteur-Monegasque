@@ -1383,6 +1383,23 @@ textarea, .out-area {
    CORRECTEUR ORTHOGRAPHE INLINE
    ══════════════════════════════════════════════════════════ */
 
+/* Bandeau de consentement avant tout envoi vers le service externe LanguageTool */
+.lt-consent-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: #fef9e7;
+  border: 1px solid var(--or);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  font-size: .76rem;
+  color: #555;
+}
+.lt-consent-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
 /* Wrapper relatif pour superposer le miroir */
 .ta-col { position: relative; }
 

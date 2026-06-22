@@ -51,6 +51,7 @@ function doTranslate() {
   tout.className = 'out-area';
   tout.innerHTML = _buildClickableOutput(result, tokens);
   State.lastTranslation = { input, output: tout.innerText, tokens };
+  if (typeof History !== 'undefined') History.push(input, tout.innerText, State.dirFR);
 
   _renderAnalysis(tokens, confidence);
   awrap.style.display = 'block';

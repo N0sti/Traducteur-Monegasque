@@ -8,7 +8,19 @@
  *       ✅ Accepter la correction (applique + relance traduction)
  *       ✕  Ignorer (retire le soulignement)
  *
- * FR → LanguageTool API  |  MC → Levenshtein sur la BDD
+ * FR → LanguageTool API (service tiers, OPT-IN)  |  MC → Levenshtein sur la BDD (local, toujours actif)
+ *
+ * ── Confidentialité ──────────────────────────────────────────
+ * Le texte tapé en français est un contenu potentiellement personnel.
+ * L'envoyer à chaque frappe vers une API tierce sans consentement est
+ * une fuite de confidentialité. Le correcteur FR est donc :
+ *   - DÉSACTIVÉ par défaut
+ *   - activé uniquement après accord explicite de l'utilisateur (bandeau)
+ *   - le choix n'est mémorisé qu'en mémoire (pas de localStorage), donc
+ *     redemandé à chaque nouvelle session, conformément au choix
+ *     architectural "tout en mémoire" du projet.
+ * Le correcteur MC, lui, ne quitte jamais le navigateur (Levenshtein
+ * local sur la BDD) : aucune question de confidentialité ne s'y applique.
  */
 
 const SpellCheck = (() => {
@@ -18,6 +30,43 @@ const SpellCheck = (() => {
   let _timer = null;
   let _mirror = null;
   let _popup  = null;   // popup flottant actif
+
+  // ── Consentement correcteur FR (service tiers) ───────────
+  // null = pas encore demandé · true = autorisé · false = refusé
+  let _ltConsent = null;
+
+  function _ensureConsentBanner() {
+    if (document.getElementById('lt-consent-banner')) return;
+    const tin = document.getElementById('tin');
+    if (!tin) return;
+    const wrap = tin.closest('.ta-col') || tin.parentElement;
+
+    const banner = document.createElement('div');
+    banner.id = 'lt-consent-banner';
+    banner.className = 'lt-consent-banner';
+    banner.innerHTML = `
+      <span class="lt-consent-text">
+        🌐 Activer la correction orthographique française ?
+        Votre texte sera alors envoyé à un service externe (LanguageTool).
+      </span>
+      <span class="lt-consent-actions">
+        <button type="button" id="lt-consent-accept" class="btn-vert"  style="font-size:.72rem;padding:4px 10px">Activer</button>
+        <button type="button" id="lt-consent-refuse"  class="btn-ghost" style="font-size:.72rem;padding:4px 10px">Non merci</button>
+      </span>`;
+    wrap.insertBefore(banner, tin);
+
+    banner.querySelector('#lt-consent-accept').addEventListener('click', () => {
+      _ltConsent = true;
+      banner.remove();
+      if (document.getElementById('tin').value.trim().length >= 3) {
+        _run(document.getElementById('tin').value);
+      }
+    });
+    banner.querySelector('#lt-consent-refuse').addEventListener('click', () => {
+      _ltConsent = false;
+      banner.remove();
+    });
+  }
 
   // ── Levenshtein ──────────────────────────────────────────
   function _lev(a, b) {
@@ -37,9 +86,12 @@ const SpellCheck = (() => {
     return dp[b.length];
   }
 
-  // ── Correcteur FR — LanguageTool ─────────────────────────
+  // ── Correcteur FR — LanguageTool (service tiers, opt-in) ─
   let _ltCache = {};
   async function _checkFR(text) {
+    // Pas de consentement → on ne contacte jamais le service externe.
+    if (_ltConsent !== true) return { corrections: [] };
+
     const key = text.trim().slice(0, 200);
     if (_ltCache[key]) return _ltCache[key];
     const result = { corrections: [] };
@@ -320,6 +372,11 @@ const SpellCheck = (() => {
 
   async function _run(text) {
     if (!text || text.trim().length < 3) { clear(); return; }
+    if (State.dirFR && _ltConsent === null) {
+      // Pas encore de décision de l'utilisateur : on demande, on n'envoie rien.
+      _ensureConsentBanner();
+      return;
+    }
     const result = State.dirFR ? await _checkFR(text) : _checkMC(text);
     _corrections = result.corrections || [];
     _renderMirror(text, _corrections);

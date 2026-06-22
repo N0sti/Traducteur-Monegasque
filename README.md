@@ -1,6 +1,6 @@
 # 🇲🇨 Traducteur Monégasque — Münegascu
 
-> Application web de traduction français ↔ monégasque, entièrement autonome (un seul fichier HTML), avec moteur de traduction intelligent, prononciation audio, gestion communautaire des corrections et panneau d'administration sécurisé.
+> Application web de traduction français ↔ monégasque, entièrement autonome (HTML/CSS/JS statiques, sans backend ni base de données externe), avec moteur de traduction intelligent, prononciation audio, gestion communautaire des corrections et panneau d'administration sécurisé.
 
 ---
 
@@ -8,7 +8,7 @@
 
 Le **monégasque** (*münegascu*) est une langue ligurienne proche du génois, patrimoine linguistique officiel de la Principauté de Monaco depuis 1997. Cette application vise à rendre la langue accessible au plus grand nombre, tout en permettant à une communauté de contributeurs d'enrichir progressivement la base de données.
 
-L'application est un **fichier HTML unique**, sans dépendance serveur, sans base de données externe, sans installation. Elle s'ouvre directement dans un navigateur moderne.
+L'application est un ensemble de fichiers statiques (HTML, CSS, JS — voir `munegascu/munegascu/`), sans dépendance serveur, sans base de données externe, sans installation. Elle s'ouvre directement dans un navigateur moderne via `index.html`.
 
 ---
 
@@ -29,7 +29,7 @@ L'application est un **fichier HTML unique**, sans dépendance serveur, sans bas
 
 ### 📚 Dictionnaire & Phrases
 
-- **Plus de 250 mots** répartis en 14 catégories : salutations, nature, famille, chiffres, quotidien, cuisine, corps, couleurs, adjectifs, verbes, Monaco, animaux, saisons, pronoms
+- **Plus de 750 mots** répartis en 24 catégories : salutations, nature, famille, chiffres, quotidien, cuisine, corps, couleurs, adjectifs, verbes, Monaco, animaux, saisons, pronoms, santé, logement, vêtements, transport, commerce, métiers, école, religion, émotions, particules
 - **35+ phrases usuelles** complètes
 - Filtrage par catégorie, recherche textuelle en temps réel
 - Basculement entre vue « Mots » et vue « Phrases »
@@ -51,8 +51,11 @@ Section de référence complète :
 
 ### 🔀 Conjugueur
 
-- **18 verbes** conjugués : être, avoir, aller, faire, aimer, vouloir, pouvoir, dire, parler, manger, boire, venir, savoir, voir, donner, appeler, habiter, trouver
+- **33 verbes** conjugués : être, avoir, aller, faire, aimer, vouloir, pouvoir, dire, parler, manger, boire, venir, savoir, voir, donner, appeler, habiter, trouver, courir, écrire, lire, prendre, chanter, finir, dormir, marcher, partir, vivre, vendre, répondre, perdre, apprendre, nager
 - **6 temps** : présent, imparfait, futur, conditionnel, subjonctif, impératif
+- Conjugaisons sourcées depuis la *Grammaire monégasque* de Louis Frolla (1960,
+  réédition Comité National des Traditions Monégasques) — voir `NOTES_LINGUISTIQUES.md`
+  pour le détail des sources et les points encore à valider par un locuteur natif
 - Prononciation 🔊 disponible sur chaque forme conjuguée
 - Recherche libre ou sélection rapide par clic
 
@@ -210,14 +213,25 @@ Les corrections validées par l'admin sont intégrées immédiatement dans le di
 
 ## Sécurité
 
-> Le mot de passe admin est `admin` dans la version de démonstration. Pour un déploiement réel, remplacer la ligne suivante dans le code JavaScript :
+L'application embarque déjà un module de sécurité dédié (`src/js/security.js`) :
+authentification par hash PBKDF2 (sel aléatoire, 600 000 itérations, comparaison
+en temps constant), limitation du débit de connexion (rate limiting), session
+admin expirant après 30 min d'inactivité, échappement systématique de toute
+donnée dynamique avant injection HTML, validation des entrées et des fichiers
+importés, anti-clickjacking, et une Content-Security-Policy restreignant les
+sources de scripts/styles/connexions au strict nécessaire.
 
-```javascript
-// Ligne à modifier dans le JS :
-if(pwd==='admin'){
-```
+> Un mot de passe administrateur initial a été généré aléatoirement pour ce
+> dépôt — voir `munegascu/munegascu/NOUVEAU_MOT_DE_PASSE_ADMIN.txt`.
+> **Changez-le avant tout déploiement réel** en suivant la procédure décrite
+> dans ce fichier (génération d'un nouveau hash via `Security.generateCredential()`
+> dans la console du navigateur, puis copie dans `ADMIN_CREDENTIAL`).
 
-Par une vérification serveur ou un hash SHA-256 côté client.
+Le correcteur orthographique français s'appuie sur le service externe
+LanguageTool : par souci de confidentialité, il est **désactivé par défaut**
+et ne contacte ce service qu'après consentement explicite de l'utilisateur
+(bandeau affiché dans le traducteur). Le correcteur monégasque, lui, reste
+entièrement local (aucune donnée n'est transmise).
 
 ---
 

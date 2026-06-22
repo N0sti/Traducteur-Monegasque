@@ -13,12 +13,17 @@ munegascu/
 │   ├── css/
 │   │   └── main.css        ← Tous les styles (variables, composants, responsive)
 │   ├── js/
+│   │   ├── security.js     ← Module de sécurité central (auth, validation, anti-XSS)
 │   │   ├── translator.js   ← Moteur de traduction intelligent
 │   │   ├── ui.js           ← Interface : onglets, dictionnaire, corrections
 │   │   ├── admin.js        ← Panneau admin, import CSV, conflits
+│   │   ├── history.js      ← Historique des traductions de session
+│   │   ├── quiz.js         ← Mode quiz / flashcards
+│   │   ├── spellcheck.js   ← Correction orthographique inline (FR opt-in, MC local)
 │   │   └── audio.js        ← Prononciation Web Speech API
 │   └── data/
-│       └── database.js     ← BDD : mots, phrases, conjugaisons, patterns
+│       ├── database.js        ← BDD principale : mots, phrases, conjugaisons, patterns
+│       └── database_extra.js  ← Mots supplémentaires, fusionnés automatiquement dans DB_WORDS
 ├── docs/                   ← Documentation complémentaire
 ├── .gitignore
 └── README.md
@@ -27,8 +32,8 @@ munegascu/
 ### Ordre de chargement des scripts
 
 ```
-database.js  →  translator.js  →  ui.js  →  admin.js  →  audio.js
-   (data)          (moteur)       (vue)      (actions)    (son)
+security.js → database.js → database_extra.js → translator.js → ui.js → admin.js → history.js → quiz.js → spellcheck.js → audio.js
+   (sécu)         (data)          (data+)             (moteur)      (vue)    (actions)  (histo)     (quiz)    (orthographe)   (son)
 ```
 
 ---
@@ -105,13 +110,28 @@ public_html/
 
 ## Mot de passe admin
 
-En production, remplacer dans `src/js/admin.js` :
+Le mot de passe n'est jamais stocké en clair : `src/js/security.js` conserve
+uniquement un hash PBKDF2 (sel aléatoire, 600 000 itérations) dans
+`ADMIN_CREDENTIAL`, comparé en temps constant.
+
+Un mot de passe initial aléatoire a déjà été généré pour ce dépôt — voir
+`NOUVEAU_MOT_DE_PASSE_ADMIN.txt`. **Changez-le avant tout déploiement réel** :
 
 ```javascript
-// ❌ Démo seulement
-if (pwd === 'admin') { ... }
+// 1. Dans la console du navigateur :
+await Security.generateCredential('votre_nouveau_mot_de_passe')
+// → affiche "salt_hex:hash_hex"
 
-// ✅ Production : vérification serveur (fetch POST)
+// 2. Collez ce résultat dans src/js/security.js :
+const ADMIN_CREDENTIAL = 'salt_hex:hash_hex';
+```
+
+Pour un déploiement à plusieurs administrateurs ou avec révocation d'accès,
+remplacer ce mécanisme client par une vérification serveur (l'authentification
+front-end seule reste un compromis adapté à un usage mono-admin sans backend) :
+
+```javascript
+// ✅ Production multi-admin : vérification serveur
 const res = await fetch('/api/auth', { method: 'POST', body: JSON.stringify({ pwd }) });
 if ((await res.json()).ok) { ... }
 ```

@@ -66,8 +66,12 @@ const Security = (() => {
 
   const PBKDF2_ITERATIONS = 600_000;
 
-  // Credential actuel = mot de passe "admin"
-  const ADMIN_CREDENTIAL = 'ec3eb92f6ef42e6a364fcadab73114af:b03cee0c0a25f52e052665d9d143a6799708cf7fd88a39a292f67e30e2115cd8';
+  // Credential actuel — mot de passe initial généré aléatoirement (voir
+  // NOUVEAU_MOT_DE_PASSE_ADMIN.txt fourni séparément). À CHANGER au premier
+  // déploiement réel : ouvrez la console du navigateur et tapez
+  // Security.generateCredential('votre_nouveau_mdp'), puis copiez le
+  // résultat ci-dessous.
+  const ADMIN_CREDENTIAL = '16797c2f02c7fc60fc72f2507bd8e38b:294d8fb324f96461116d2c2c5521fa29ddba9f289859217337241e276ab7c293';
 
   function _hexToBytes(hex) {
     const buf = new Uint8Array(hex.length / 2);

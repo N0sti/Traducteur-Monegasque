@@ -1,4 +1,11 @@
-// Mots supplémentaires à ajouter — seront fusionnés dans DB_WORDS
+// ──────────────────────────────────────────────────────────────
+// NOTE (vérifié) : ce fichier N'EST PLUS CHARGÉ par index.html.
+// Vérification faite mot par mot : les 391 entrées ci-dessous sont
+// TOUTES déjà présentes, à l'identique, dans database.js. Ce fichier
+// semble être un brouillon de travail antérieur conservé par erreur
+// dans le dépôt — il ne contient aucun mot manquant du dictionnaire.
+// Conservé ici à titre d'archive ; supprimable sans perte de contenu.
+// ──────────────────────────────────────────────────────────────
 const DB_WORDS_EXTRA = [
   // CORPS (suite)
   { fr:"Genou",mc:"Genoivu",ph:"dʒenojvy",cat:"corps" },

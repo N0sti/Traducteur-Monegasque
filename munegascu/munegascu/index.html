@@ -4,9 +4,40 @@
   <meta charset="UTF-8">
   <!-- ══ SÉCURITÉ ══════════════════════════════════════════════
        Headers de sécurité (meta équivalents)
-       Note : script-src sans 'unsafe-inline' bloquerait les onclick inline.
-       Pour un déploiement avec serveur, configurer les headers HTTP côté serveur.
+       Note : script-src garde 'unsafe-inline' car l'UI repose sur des
+       attributs onclick/onchange inline (~90 occurrences, certains générés
+       dynamiquement par admin.js/quiz.js). Les retirer demanderait une
+       réécriture complète en délégation d'événements, à fort risque de
+       régression, pour un gain limité puisque le XSS est déjà neutralisé
+       par l'échappement systématique (Security.esc/escAttr) sur toute
+       donnée dynamique injectée en innerHTML.
+       En revanche, la CSP bloque ici tout le reste : aucun script ne peut
+       être chargé depuis un domaine tiers, aucune frame/objet/plugin
+       n'est autorisé, et les seules connexions réseau possibles sont
+       Google Fonts (polices) et LanguageTool (correcteur FR, opt-in).
+       Pour un déploiement avec serveur, dupliquer cette politique dans
+       l'en-tête HTTP Content-Security-Policy (plus robuste qu'une meta,
+       et seul moyen d'activer frame-ancestors).
        ══════════════════════════════════════════════════════════ -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'none';
+    script-src 'self' 'unsafe-inline';
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src 'self' https://fonts.gstatic.com;
+    img-src 'self' data:;
+    connect-src 'self' https://api.languagetool.org;
+    object-src 'none';
+    base-uri 'none';
+    form-action 'none';
+    frame-src 'none';
+    upgrade-insecure-requests;
+  ">
+  <!-- frame-ancestors (anti-clickjacking) ne peut pas être posé via <meta> —
+       les navigateurs l'ignorent dans ce contexte. Le JS le compense déjà
+       via security.js (détection + masquage si chargé dans une iframe).
+       Pour un blocage plus robuste côté réseau, ajouter côté serveur :
+       Content-Security-Policy: frame-ancestors 'none'
+       X-Frame-Options: DENY -->
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   <meta http-equiv="Permissions-Policy" content="microphone=(), camera=(), geolocation=()">
@@ -122,15 +153,25 @@
         <div class="modal-status" id="correction-status"></div>
       </div>
     </div>
-    <div id="history-list"><p style="color:#bbb;font-size:.83rem">Aucune traduction dans cette session.</p></div>
-    </div>
 
-    <!-- Bouton corriger -->
-    <div style="margin-top:10px;text-align:right">
+    <!-- Bouton corriger + Historique -->
+    <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <button class="btn-ghost" onclick="History.togglePanel()" style="font-size:.78rem">
+        🕓 Historique <span class="badge" id="history-cnt">0</span>
+      </button>
       <button class="btn-ghost" id="btn-correct" onclick="toggleCorrection()"
               style="font-size:.78rem;display:none">
         ✏️ Corriger cette traduction
       </button>
+    </div>
+
+    <!-- Historique des traductions de session (replié par défaut) -->
+    <div class="history-panel" id="history-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h4 style="margin:0;font-size:.9rem">🕓 Historique de la session</h4>
+        <button class="btn-ghost" onclick="History.clear()" style="font-size:.72rem;color:var(--rouge)">🗑️ Vider</button>
+      </div>
+      <div id="history-list"><p style="color:#bbb;font-size:.83rem">Aucune traduction dans cette session.</p></div>
     </div>
 
     <!-- Dictionnaire & Phrases -->
@@ -185,19 +226,19 @@
           <p style="font-size:.8rem;color:#777;margin-bottom:7px"><strong>Définis</strong></p>
           <table class="gram-table">
             <tr><th></th><th>Masc.</th><th>Fém.</th></tr>
-            <tr><td>Sing.</td><td class="mc">U / U'</td><td class="mc">A / A'</td></tr>
-            <tr><td>Plur.</td><td class="mc">I</td><td class="mc">E / Le</td></tr>
+            <tr><td>Sing.</td><td class="mc">U / Řu</td><td class="mc">A / Řa</td></tr>
+            <tr><td>Plur.</td><td class="mc">I / Ři</td><td class="mc">Ë / Řë</td></tr>
           </table>
-          <div class="note">Ex: <span class="mc">U mare</span> · <span class="mc">A famiggia</span> · <span class="mc">I figgiù</span></div>
+          <div class="note">Ex: <span class="mc">U fœgu</span> (le feu) · <span class="mc">A marina</span> (la mer) · <span class="mc">I bateli</span> (les bateaux) · <span class="mc">Ë sciùre</span> (les fleurs). La forme en ř (devant voyelle, ou par euphonie) est l'élision : <span class="mc">řomu</span> (l'homme). Source : Grammaire monégasque, Frolla, Chapitre II.</div>
         </div>
         <div>
           <p style="font-size:.8rem;color:#777;margin-bottom:7px"><strong>Indéfinis</strong></p>
           <table class="gram-table">
             <tr><th></th><th>Masc.</th><th>Fém.</th></tr>
-            <tr><td>Sing.</td><td class="mc">Un</td><td class="mc">Una</td></tr>
-            <tr><td>Plur.</td><td class="mc">Di</td><td class="mc">De</td></tr>
+            <tr><td>Sing.</td><td class="mc">Ün</td><td class="mc">Üna</td></tr>
+            <tr><td>Plur.</td><td class="mc">De</td><td class="mc">De</td></tr>
           </table>
-          <div class="note">Élision : <span class="mc">U'amïgu</span>, <span class="mc">A'aegua</span></div>
+          <div class="note">Élision : <span class="mc">ün'arma</span> (une arme) ; par euphonie, ün/üna se réduisent souvent à <span class="mc">'n / 'na</span>. Pluriel (= partitif) : <span class="mc">de cái, de gati</span> (des chiens, des chats).</div>
         </div>
       </div>
     </div>
@@ -206,14 +247,14 @@
       <h3>🔄 Pronoms</h3>
       <table class="gram-table">
         <tr><th>FR</th><th>Sujet MC</th><th>COD MC</th><th>COI MC</th></tr>
-        <tr><td>Je</td><td class="mc">Mi / Mì</td><td class="mc">me</td><td class="mc">me</td></tr>
-        <tr><td>Tu</td><td class="mc">Ti</td><td class="mc">te</td><td class="mc">te</td></tr>
-        <tr><td>Il/Elle</td><td class="mc">Elu/Ela</td><td class="mc">lu/la</td><td class="mc">ge/ghe</td></tr>
+        <tr><td>Je</td><td class="mc">Min</td><td class="mc">me</td><td class="mc">me</td></tr>
+        <tr><td>Tu</td><td class="mc">Tü</td><td class="mc">te</td><td class="mc">te</td></tr>
+        <tr><td>Il/Elle</td><td class="mc">Ëlu/Ëla</td><td class="mc">lu/la</td><td class="mc">ge/ghe</td></tr>
         <tr><td>Nous</td><td class="mc">Nui</td><td class="mc">ne</td><td class="mc">ne</td></tr>
         <tr><td>Vous</td><td class="mc">Vui</td><td class="mc">ve</td><td class="mc">ve</td></tr>
-        <tr><td>Ils/Elles</td><td class="mc">Eri/Ere</td><td class="mc">i/e</td><td class="mc">ge/ghe</td></tr>
+        <tr><td>Ils/Elles</td><td class="mc">Ëli/Ële</td><td class="mc">i/e</td><td class="mc">ge/ghe</td></tr>
       </table>
-      <div class="note">Le pronom sujet est souvent omis : <span class="mc">Sùn de Mùnegu</span></div>
+      <div class="note">Le pronom sujet est souvent omis — il ne sert qu'à l'emphase : <span class="mc">Sun de Mùnegu</span> « je suis de Monaco », <span class="mc">Min sun de Mùnegu</span> « MOI je suis de Monaco ». Source : Grammaire monégasque, L. Frolla, Chapitre V.</div>
     </div>
 
     <div class="gram-section">
@@ -283,8 +324,8 @@
       <h3>Groupes verbaux</h3>
       <p style="font-size:.85rem;color:#555;margin-bottom:10px">
         <span class="pill"       onclick="loadVerb('aimer')">1er groupe : -à</span>
-        <span class="pill rouge" onclick="loadVerb('finir')">2e groupe : -ì/-ü</span>
-        <span class="pill bleu"  onclick="loadVerb('être')">3e groupe : irréguliers</span>
+        <span class="pill rouge" onclick="loadVerb('lire')">2e groupe : -e</span>
+        <span class="pill bleu"  onclick="loadVerb('finir')">3e groupe : -ì</span>
       </p>
       <div style="display:flex;flex-wrap:wrap;gap:5px">
         <span class="pill" onclick="loadVerb('être')">être</span>
@@ -627,6 +668,9 @@ mer,Mare,mare,nature</div>
 <!-- Ordre important : security → data → moteur → ui → admin → history → quiz → spellcheck → audio -->
 <script src="src/js/security.js"></script>
 <script src="src/data/database.js"></script>
+<!-- src/data/database_extra.js n'est plus chargé : vérification faite, son contenu
+     (391 entrées) est déjà intégralement présent dans database.js. Voir la note
+     en tête de ce fichier pour le détail. -->
 <script src="src/js/translator.js"></script>
 <script src="src/js/ui.js"></script>
 <script src="src/js/admin.js"></script>

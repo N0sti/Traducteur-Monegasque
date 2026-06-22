@@ -1,0 +1,32 @@
+SÉCURITÉ — MOT DE PASSE ADMINISTRATEUR
+═══════════════════════════════════════
+
+Le mot de passe par défaut "admin" a été remplacé par un mot de passe
+généré aléatoirement (le hash PBKDF2 correspondant est déjà en place
+dans src/js/security.js) :
+
+    Mot de passe initial : Munegu002682a1!2026
+
+⚠️  IMPORTANT
+─────────────
+- Ce mot de passe est fourni UNE SEULE FOIS, dans ce fichier.
+  Notez-le dans un gestionnaire de mots de passe, puis supprimez ce
+  fichier (ou ne le déployez jamais sur le serveur public).
+- Changez-le dès que possible pour un mot de passe que vous seul
+  connaissez, avec la procédure ci-dessous.
+
+COMMENT CHANGER LE MOT DE PASSE
+────────────────────────────────
+1. Ouvrez index.html dans votre navigateur.
+2. Ouvrez la console développeur (F12 ou Ctrl+Maj+I, onglet "Console").
+3. Tapez :
+       await Security.generateCredential('votre_nouveau_mot_de_passe')
+4. La console affiche une ligne du type :
+       a1b2c3...:d4e5f6...
+5. Copiez cette valeur dans src/js/security.js, à la ligne :
+       const ADMIN_CREDENTIAL = '...';
+6. Sauvegardez le fichier et rechargez la page.
+7. Supprimez ce fichier (NOUVEAU_MOT_DE_PASSE_ADMIN.txt) du projet.
+
+Le mot de passe n'est jamais stocké en clair : seul un hash PBKDF2
+(600 000 itérations, sel aléatoire) est conservé dans le code source.
